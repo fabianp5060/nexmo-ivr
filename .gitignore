@@ -1,0 +1,7 @@
+app.key
+auth.db
+.DS_Store
+redirect_to_screenpop.zip
+vendor
+.bundle
+testing.rb

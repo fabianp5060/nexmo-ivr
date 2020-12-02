@@ -1,0 +1,25 @@
+<div class="Vlt-col Vlt-col--2of3">
+  <div class="Vlt-card Vlt-bg-white">
+    <div class="Vlt-card__content">  
+      <h2>Edit Trigger for <%=@item['dnis']%></h2>
+      <form method="POST" action="/trigger_pop/edit">
+        <input hidden name="dnis" value="<%=@item['dnis']%>">
+        <div class="Vlt-form__element"> 
+          <div class="Vlt-input"><label>Trigger</label><input type="text" name="trigger_pop"></div>
+          <small class="Vlt-form__element__hint">Current Value: <%=@item['trigger_pop']%></small>
+        </div>
+        <div class="Vlt-form__element"> 
+          <div class="Vlt-input"><label>Description</label><input type="text" name="description"></div>
+          <small class="Vlt-form__element__hint">Current Value: <%=@item['description']%></small>
+        </div> 
+        <div class="Vlt-form__element">          
+          <div class="Vlt-input"><label>Full Service?</label><input type="text" name="is_full_svc"></div>
+          <small class="Vlt-form__element__hint">Current Value: <%=@item['is_full_svc']%></small>
+        </div>                      
+        <div class="Vlt-form__element">            
+          <button class="Vlt-btn Vlt-btn--primary" type="Submit">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

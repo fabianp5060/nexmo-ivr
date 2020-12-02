@@ -1,0 +1,92 @@
+<div class="Vlt-col Vlt-col--2of3">
+  <h3>Found <%=@stores_count%> Stores</h3>
+  <div class="Vlt-card Vlt-bg-white">
+  	<div class="Vlt-card__content">
+      <form method="GET" action="/stores">
+        <div class="Vlt-grid Vlt-grid--narrow">
+          <div class="Vlt-col--A">
+            <div class="Vlt-form__element">
+              <label class="Vlt-label" for="c_search">Search Column</label>
+              <div class="Vlt-select">
+                <select id="c_search" name="search">
+                  <option selected disabled>Choose Column</option>
+                  <% @stores_names.each do |k| %>
+                  <option value="<%=k%>"><%=k%></option>
+                  <% end %>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="Vlt-col--A">
+            <div class="Vlt-form__element">
+              <label class="Vlt-label">Contains:</label>
+              <div class="Vlt-input">
+                <input type="text" name=value>
+              </div>
+            </div>
+          </div>
+          <div class="VLT-col--A">
+            <div class="Vlt-form__element"> 
+              <label class="Vlt-label"></label>
+              <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" type="Submit">Search</button>
+            </div>
+          </div>              
+      </form>                 
+      <div class="Vlt-grid__separator"><!--notes--></div>
+      <div class="Vlt-table Vlt-table--data Vlt-table--cols Vlt-table--sortable" data-sortable>
+        <form method="GET" id="store_edit" action="/stores/bulk">
+          <div class="Vlt-col VLT-col--A">
+            <div class="Vlt-form__element">
+              <label class="Vlt-label"></label>
+              <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" id="store_edit" type="Submit">Edit Selected</button>
+            </div>   
+          </div>          
+          <table>
+            <thead>
+              <tr>
+                  <th></th>
+              <% @stores_names.each do |k| %>
+                  <th><b><%=k%></b></th>
+              <% end %>
+              </tr>    
+            </thead>
+            <tbody>
+                <% @stores.each do |store| %>
+                <tr class="Vlt-btn-on-hover">
+                  <td>
+                    <div class="Vlt-checkbox Vlt-checkbox--inline">
+                      <label for="checkmark_<%=store['dnis']%>">
+                        <span class="Vlt-checkbox__button">
+                          <input type="checkbox" id="checkmark_<%=store['dnis']%>" name="checkmark_<%=store['dnis']%>" value=<%=store['dnis']%> />
+                          <span class="Vlt-checkbox__icon"></span>
+                        </span>
+                      </label>
+                    </div>
+                  </td>
+                <%   store.each do |k,v| %> 
+                <%    if k == 'open_hours'%>
+                        <td>
+                <%      v.each do |day,hours| %>
+                          <p><%=day%>:<%=hours[0]%>-<%=hours[1]%></p>
+                <%      end %>
+                        </td>
+                <%    elsif k == 'media_files' %>
+                        <td>
+                <%      v.each do |type,file| %>
+                          <p><%=type%>:<%=file%></p>
+                <%      end %>
+                        </td>
+                <%    else %>
+                          <td><%=v%></td>                
+                <%    end %>
+                <%   end %>      
+                </tr>
+                <% end %>                                 
+              </form>              
+            </tbody>            
+          </table>         
+      </div>
+    </div>
+  </div>
+</div>
+

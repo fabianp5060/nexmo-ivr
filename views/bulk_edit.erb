@@ -1,0 +1,79 @@
+<div class="Vlt-col Vlt-col--2of3">
+  <h3>Editing <%=@stores_count%> Stores</h3>
+  <div class="Vlt-card Vlt-bg-white">
+  	<div class="Vlt-card__content">
+      <form method="POST" action="/stores/edit">
+        <input hidden name="request_id" value="<%=@request_id%>" /> 
+        <div class="Vlt-grid Vlt-grid--narrow">
+          <div class="Vlt-col--A">
+            <div class="Vlt-form__element">
+              <label class="Vlt-label" for="media_type">Closed For</label>
+              <div class="Vlt-select">
+                <select id="media_type" name="search">
+                  <option selected disabled>Reason</option>
+                  <% @media_types.each do |k| %>
+                  <option value="<%=k%>"><%=k%></option>
+                  <% end %>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="Vlt-col--A">
+            <div class="Vlt-form__element">
+              <label class="Vlt-label" for="file_name">Greeting Name</label>
+              <div class="Vlt-select"> 
+                <select id="file_name" name="file_name">
+                  <option selected disabled>File Name</option>
+                  <% @existing_files.each do |k| %>
+                  <option value="<%=k%>"><%=k%></option>
+                  <% end %>
+                </select>                           
+              </div>
+            </div>
+          </div>
+          <div class="VLT-col--A">
+            <div class="Vlt-form__element"> 
+              <label class="Vlt-label"></label>
+              <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" type="Submit">Update</button>
+            </div>
+          </div>              
+      </form>                 
+      <div class="Vlt-grid__separator"><!--notes--></div>
+      <div class="Vlt-table Vlt-table--data Vlt-table--cols">
+        <table>
+          <thead>
+            <tr>
+            <% @stores_names.each do |k| %>
+                <th><b><%=k%></b></th>
+            <% end %>
+            </tr>    
+          </thead>
+          <tbody>
+              <% @stores.each do |store| %>
+              <tr class="Vlt-btn-on-hover">
+              <%   store.each do |k,v| %> 
+              <%    if k == 'open_hours'%>
+                      <td>
+              <%      v.each do |day,hours| %>
+                        <p><%=day%>:<%=hours[0]%>-<%=hours[1]%></p>
+              <%      end %>
+                      </td>
+              <%    elsif k == 'media_files' %>
+                      <td>
+              <%      v.each do |type,file| %>
+                        <p><%=type%>:<%=file%></p>
+              <%      end %>
+                      </td>
+              <%    else %>
+                        <td><%=v%></td>                
+              <%    end %>
+              <%   end %>      
+              </tr>
+              <% end %>             
+          </tbody>            
+        </table>         
+      </div>
+    </div>
+  </div>
+</div>
+

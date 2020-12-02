@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" itemscope itemtype="http://schema.org/Article">
+    <head>
+      <!-- Volta CSS Stuff -->
+      <link rel="icon" type="image/ico" href="https://d2gl3otkt8l7qr.cloudfront.net/favicon.png">
+    <link rel="stylesheet" href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta-rebrand-fonts-colors/dist/css/volta.css">
+    <!-- Okta widget stuff -->
+    <script src="https://ok1static.oktacdn.com/assets/js/sdk/okta-auth-js/2.0.1/okta-auth-js.min.js"></script>
+    </head>
+  <body>
+    <div class="Vlt-margin--top3 Vlt-margin--M-top2 Vlt-margin--S-top1">
+      <div class="Vlt-col">
+        <header class="Vlt-header">
+          <div class="Vlt-grid">
+            <div class="Vlt-col">
+              <div class="Vlt-grid">
+                <div class="Vlt-col Vlt-col--1of2">
+                  <div class="Vlt-header__logo">
+                    <a href="/login" >
+                      <img src="https://s3-us-west-2.amazonaws.com/assets-petesweb.io/assets/volta-rebrand-fonts-colors/images/logos/vonage-logo.svg#volta">
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="Vlt-col Vlt-col--1of4">
+            </div>
+            <div class="Vlt-col Vlt-col--4of4 Vlt-right">
+              <% @msg = ""%>
+              <% if @user %>
+              <%   @msg = "logout: " unless @user == LOGIN_MSG %>
+              <% else %>
+              <%   @user = "Unknown" %>
+              <% end %>
+              <a href="/logout"><div id="auth_email_address" class="Vlt-badge Vlt-badge--large Vlt-badge--transparent Vlt-badge--black"><%=@msg%><%=@user.split("@")[0]%></div></a>
+            </div>        
+          </div>
+      </header>
+      </div>
+      <p></p>
+      <p></p>
+    <div class="Vlt-grid">
+      <div class="Vlt-col">
+      </div>
+      <div class="Vlt-col">
+
+      </div>
+      <div class="Vlt-col">
+      </div>
+      <div class="Vlt-col">
+      </div>
+      <div class="Vlt-grid__separator"><!--Empty line breaker--></div>
+      <div class="Vlt-col">       
+      </div>
+      <div class="Vlt-col Vlt-col--3of4">
+          <% if @error %>
+            <div class="Vlt-callout Vlt-callout--critical">
+              <i></i>
+              <div class="Vlt-callout__content">
+                <p><%=@error %></p>
+              </div>
+            </div>
+          <% elsif @success %>
+            <div class="Vlt-callout Vlt-callout--good">
+              <i></i>
+              <div class="Vlt-callout__content">
+                <p><%=@success%></p>
+              </div>
+            </div>
+          <% elsif @warning %>
+            <div class="Vlt-callout Vlt-callout--warning">
+              <i></i>
+              <div class="Vlt-callout__content">
+                <p><%=@warning%></p>
+              </div>
+            </div> 
+          <% elsif @tip %>
+            <div class="Vlt-callout Vlt-callout--tip">
+              <i></i>
+              <div class="Vlt-callout__content">
+                <p><%=@tip%></p>
+              </div>
+            </div>  
+          <% end %>
+        <%= yield %>        
+      </div>
+      <div class="Vlt-col">       
+      </div>                          
+    </div>
+    </div>
+    <script type="text/javascript" src="https://s3-us-west-2.amazonaws.com/assets-petesweb.io/assets/volta-rebrand-fonts-colors/js/svgxuse.min.js"></script>
+    <script type="text/javascript" src="https://s3-us-west-2.amazonaws.com/assets-petesweb.io/assets/volta-rebrand-fonts-colors/dist/js/volta.min.js"/> 
+    <script type="text/javascript">
+      Volta.init();
+    </script> 
+    </body>
+</html>

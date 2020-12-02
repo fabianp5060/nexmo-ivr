@@ -100,6 +100,9 @@ class AppRoutes < Sinatra::Base
 		erb :recordings				
 	end
 
+	get '/clear/data' do
+		$app_logger.info "#{__method__} | Destroy dB | #{EditStoresDB.destroy}"
+	end
 
 
 end

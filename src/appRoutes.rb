@@ -15,6 +15,8 @@ class AppRoutes < Sinatra::Base
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params IN: #{params} | Params is a Hash? #{params.is_a?(Hash)}"		
 		@warning,@error,@succuss = $ivr.get_prompts(params)
 		@stores = Array.new
+		@stores_count = Array.new
+		@stores_names = Array.new
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params OUT: #{params} | Params is a Hash? #{params.is_a?(Hash)}"
 
 		begin
@@ -33,7 +35,7 @@ class AppRoutes < Sinatra::Base
 				$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"AWS_DB")} SCAN: #{AWS_IVR_TABLE} | Results : Count = #{@stores.length} Headers = #{@stores[0].keys}"
 			end
 			@stores_count = @stores.length
-			@stores_names = @stores[0].keys
+			@stores_names = $ivr.get_store_headers(@stores[0].keys)
 		rescue => e
 			$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{e} | Redirecting to /error"
 			redirect '/error?error=render_stores'	
@@ -47,7 +49,8 @@ class AppRoutes < Sinatra::Base
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
 
 		# Create array of DNIS values and filter SCAN results
-		@stores,@stores_count,@stores_names,@media_types,@request_id = $ivr.get_filtered_store_list(params.values)
+		@stores,@stores_count,stores_names,@media_types,@request_id = $ivr.get_filtered_store_list(params.values)
+		@stores_names = $ivr.get_store_headers(stores_names)
 
 		files = S3_CLIENT.list_objects({bucket: S3_BUCKET, max_keys: 50})[:contents]
 		@existing_files = Array.new
@@ -55,7 +58,7 @@ class AppRoutes < Sinatra::Base
 			@existing_files.push(file['key'])
 		end
 		@existing_files.push("Add New File")
-		$app_logger.debug "#{__method__} | Files : #{files} | Filtered List : #{@existing_files}"
+		$app_logger.debug "#{__method__} | Files : #{files} | Filtered List : #{@existing_files} | Store Headers : #{@stores_names}"
 
 		erb :bulk_edit
 	end
@@ -87,7 +90,13 @@ class AppRoutes < Sinatra::Base
 
 	get '/stores/results' do 
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
-		200
+		store_list = EditStoresDB.get_edit_request(params['request_id'])[:dnis_list].split(",")
+		@stores,@stores_count,stores_names,@media_types,@request_id = $ivr.get_filtered_store_list(store_list)
+		@stores_names = $ivr.get_store_headers(stores_names)
+
+		EditStoresDB.delete_edit_request(params['request_id'])
+
+		erb :bulk_result
 	end
 
 	get '/recordings' do 

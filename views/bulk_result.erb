@@ -1,0 +1,45 @@
+<div class="Vlt-col Vlt-col--2of3">
+  <h3>Results <%=@stores_count%> Stores</h3>
+  <div class="Vlt-card Vlt-bg-white">
+  	<div class="Vlt-card__content">
+      <form method="GET" action="/stores">
+        <div class="Vlt-grid Vlt-grid--narrow">
+          <div class="VLT-col--A">
+            <div class="Vlt-form__element"> 
+              <label class="Vlt-label"></label>
+              <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" type="Submit">Back</button>
+            </div>
+          </div>              
+      </form>                 
+      <div class="Vlt-grid__separator"><!--notes--></div>
+      <div class="Vlt-table Vlt-table--data Vlt-table--cols">
+        <table>
+          <thead>
+            <tr>
+            <% @stores_names.each do |k| %>           
+                <th><b><%=k%></b></th>
+            <% end %>
+            </tr>    
+          </thead>
+          <tbody>
+              <% @stores.each do |store| %>
+                <% @stores_names.each do |k| %>
+                <% if k == 'closed_for_reason' %>
+                <td>
+                  <%=store[k]%>
+                  <div class="Vlt-tooltip Vlt-tooltip--top" title="<%=store['media_files'][store['closed_for_reason']]%>">
+                    <svg class="Vlt-icon Vlt-blue"><use xlink:href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta-rebrand-fonts-colors/images/icons/Vlt-icon-help.svg#Vlt-icon-help"/></svg>
+                  </div>
+                </td>
+                <% end %>                 
+                  <td><%=store[k]%></td>
+                <% end %>                     
+              </tr>
+              <% end %>   
+          </tbody>            
+        </table>         
+      </div>
+    </div>
+  </div>
+</div>
+

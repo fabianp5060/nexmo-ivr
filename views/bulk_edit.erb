@@ -50,24 +50,17 @@
           </thead>
           <tbody>
               <% @stores.each do |store| %>
-              <tr class="Vlt-btn-on-hover">
-              <%   store.each do |k,v| %> 
-              <%    if k == 'open_hours'%>
-                      <td>
-              <%      v.each do |day,hours| %>
-                        <p><%=day%>:<%=hours[0]%>-<%=hours[1]%></p>
-              <%      end %>
-                      </td>
-              <%    elsif k == 'media_files' %>
-                      <td>
-              <%      v.each do |type,file| %>
-                        <p><%=type%>:<%=file%></p>
-              <%      end %>
-                      </td>
-              <%    else %>
-                        <td><%=v%></td>                
-              <%    end %>
-              <%   end %>      
+                <% @stores_names.each do |k| %>
+                <% if k == 'closed_for_reason' %>
+                <td>
+                  <%=store[k]%>
+                  <div class="Vlt-tooltip Vlt-tooltip--top" title="<%=store['media_files'][store['closed_for_reason']]%>">
+                    <svg class="Vlt-icon Vlt-blue"><use xlink:href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta-rebrand-fonts-colors/images/icons/Vlt-icon-help.svg#Vlt-icon-help"/></svg>
+                  </div>
+                </td>
+                <% end %>                 
+                  <td><%=store[k]%></td>
+                <% end %>                   
               </tr>
               <% end %>             
           </tbody>            

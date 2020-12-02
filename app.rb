@@ -25,7 +25,22 @@ S3_BUCKET = ENV['NEXMO_KRISPYKREME_BUCKET_NAME']
 NEXMO_CONTROLLER = NexmoBasicController.new
 NCCO = NexmoNCCO.new
 
-
+STORE_HEADER_ORDER = [
+	'name',
+	'dnis',
+	'closed_for_reason',
+	'division',
+	'district',
+	'commisary',
+	'depot',
+	'kiosk',
+	'retail',
+	'addr_street',
+	'addr_city',
+	'addr_state',
+	'addr_zip',
+	'timezone'
+]
 
 
 class NexmoIVRController
@@ -122,11 +137,24 @@ class NexmoIVRController
 		stores.each do |store|
 			store_list.push(store) if dnis_array.include?(store['dnis'])
 		end
-		stores_count = stores.length
+		stores_count = store_list.length
 		stores_names = stores[0].keys
 		media_types = stores[0]['media_files'].keys
 
-		return stores,stores_count,stores_names,media_types,request_id
+		return store_list,stores_count,stores_names,media_types,request_id
+	end
+
+	def get_store_headers(store_list,neat=true)
+		# Order headers for views
+		# Add any headers that we don't care about to end of the list
+		ordered_store_headers = STORE_HEADER_ORDER
+		store_list.each do |k|
+			puts "store_list: #{k}"
+			next if neat && k == 'open_hours' || k == 'media_files'
+			ordered_store_headers.push(k) unless STORE_HEADER_ORDER.include?(k)
+		end
+		$app_logger.info "#{__method__} | ORDERED HEADERS: #{ordered_store_headers}"
+		return ordered_store_headers
 	end
 end
 

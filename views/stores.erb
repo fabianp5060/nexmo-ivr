@@ -1,5 +1,5 @@
 <div class="Vlt-col Vlt-col--2of3">
-  <h3>Found <%=@stores_count%> Stores</h3>
+  <h3><%=@stores_action%> <%=@stores_count%> Stores</h3>
   <div class="Vlt-card Vlt-bg-white">
   	<div class="Vlt-card__content">
       <form method="GET" action="/stores">
@@ -39,17 +39,26 @@
     <div class="Vlt-card__content">                  
       <div class="Vlt-grid__separator"><!--notes--></div>
       <div class="Vlt-table Vlt-table--data Vlt-table--cols Vlt-table--sortable" data-sortable>
-        <form method="GET" id="store_edit" action="/stores/bulk">
+        <form method="GET" id="bulk_edit" action="/stores/bulk">
           <div class="Vlt-col VLT-col--A">
             <div class="Vlt-form__element">
               <label class="Vlt-label"></label>
-              <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" id="store_edit" type="Submit">Edit Selected</button>
+              <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" id="bulk_edit" type="Submit">Edit Selected</button>
             </div>   
           </div>
           <table>
             <thead>
               <tr>
-                  <th></th>
+                  <th>
+                    <div class="Vlt-checkbox Vlt-checkbox--inline">
+                      <label for="select-all">
+                        <span class="Vlt-checkbox__button">
+                          <input type="checkbox" id="select-all"/>
+                          <span class="Vlt-checkbox__icon"></span>                          
+                        </span>
+                      </label>
+                    </div>
+                  </th>
                   <% @stores_names.each do |k| %>
                     <th><b><%=k%></b></th>
                   <% end %>              
@@ -89,4 +98,37 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Listen for click on toggle checkbox
+  $(document).ready(function(){  
+    $('#select-all').click(function(event) {   
+        if(this.checked) {
+            // Iterate each checkbox
+            $(':checkbox').each(function() {
+                this.checked = true;                        
+            });
+        } else {
+            $(':checkbox').each(function() {
+                this.checked = false;                       
+            });
+        }
+    });
+    // $('#bulk_edit').ajaxForm(function(){
+    //     console.log("Updating Form");
+    //     location.reload(true);
+    // });     
+  });
+
+  // function submitForm(form){
+  //     var url = form.attr("action");
+  //     var formData = {};
+  //     $(form).find("input[name]").each(function (index, node) {
+  //         formData[node.name] = node.value;
+  //     });
+  //     $.post(url, formData).done(function (data) {
+  //         alert(data);
+  //     });
+  // }  
+</script>
 

@@ -140,6 +140,7 @@ class NexmoIVRController
 		stores_count = store_list.length
 		stores_names = stores[0].keys
 		media_types = stores[0]['media_files'].keys
+		media_types.push('open')
 
 		return store_list,stores_count,stores_names,media_types,request_id
 	end
@@ -154,6 +155,46 @@ class NexmoIVRController
 		end
 		$app_logger.info "#{__method__} | ORDERED HEADERS: #{ordered_store_headers}"
 		return ordered_store_headers
+	end
+
+	def stores_edit(params)
+		db_result = EditStoresDB.get_edit_request(params['request_id'])
+		$app_logger.info "#{__method__} | DB_RESULT : #{db_result.inspect}"
+
+		dnis_list = db_result[:dnis_list].split(",")
+		dnis_list.each do |dnis|
+			item = AWS_DB.get_item(AWS_IVR_TABLE,{dnis: dnis})[:item]
+			media_files = item['media_files']
+
+			if params['search'] == 'open' || params.has_key?('file_name') == false
+				# I don't think we want to reset the assigned media file but not sure it matters either way
+				# media_files[item['closed_for_reason']] = "_NIL_"
+				closed_for_reason = params['search'] == 'open' ? "_NIL_" : params['search']
+				result = AWS_DB.update_item(
+					AWS_IVR_TABLE,
+					{dnis: dnis},
+					"Set #r = :r",
+					{':r' => closed_for_reason},
+					"ALL_NEW",
+					{'#r' => 'closed_for_reason'}
+				)
+				$app_logger.info "#{__method__} | AWS_DB | Update Closed for Reason Result for #{dnis}: '#{result}' | Media Files: #{media_files}"				
+			else
+				media_files["#{params['search']}"] = params['file_name']
+				result = AWS_DB.update_item(
+					AWS_IVR_TABLE,
+					{dnis: dnis},
+					"Set #r = :r, #m = :m",
+					{':r' => params['search'], ':m' => media_files},
+					"ALL_NEW",
+					{'#r' => 'closed_for_reason', '#m' => 'media_files'}
+				)
+				$app_logger.info "#{__method__} | AWS_DB | Update CoR and Media File Result for #{dnis}: '#{result}' | Media Files: #{media_files}"
+			end
+
+		end
+
+		return 1
 	end
 end
 

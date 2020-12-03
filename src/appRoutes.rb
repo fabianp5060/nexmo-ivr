@@ -17,6 +17,7 @@ class AppRoutes < Sinatra::Base
 		@stores = Array.new
 		@stores_count = Array.new
 		@stores_names = Array.new
+		@stores_action = ""
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params OUT: #{params} | Params is a Hash? #{params.is_a?(Hash)}"
 
 		begin
@@ -29,6 +30,14 @@ class AppRoutes < Sinatra::Base
 					if @stores.empty?
 						redirect "/stores?warning=search_not_found&key=#{params['search']}&value=#{params['value']}"
 					end
+				end
+			elsif params.has_key?('select-all')
+				params.delete('select-all')
+				@stores = $ivr.get_scan_filtered_results(params['search'],params['value'])[:items]
+				@stores_action = "Editing"
+				$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"AWS_DB")} SCAN FILTER Result : #{@stores}"
+				if @stores.empty?
+					redirect "/stores?warning=search_not_found&key=#{params['search']}&value=#{params['value']}"
 				end
 			else
 				@stores = AWS_DB.scan_table(AWS_IVR_TABLE)[:items]
@@ -66,24 +75,8 @@ class AppRoutes < Sinatra::Base
 # update_item(table_name,key,update_expression,expression_attribute_values,return_values,expression_attribute_names=nil)
 	post '/stores/edit' do 
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
-		db_result = EditStoresDB.get_edit_request(params['request_id'])
-		$app_logger.info "#{__method__} | DB_RESULT : #{db_result.inspect}"
 
-		dnis_list = db_result[:dnis_list].split(",")
-		dnis_list.each do |dnis|
-			item = AWS_DB.get_item(AWS_IVR_TABLE,{dnis: dnis})[:item]
-			media_files = item['media_files']
-			media_files["#{params['search']}"] = params['file_name']
-			result = AWS_DB.update_item(
-				AWS_IVR_TABLE,
-				{dnis: dnis},
-				"Set #r = :r, #m = :m",
-				{':r' => params['search'], ':m' => media_files},
-				"ALL_NEW",
-				{'#r' => 'closed_for_reason', '#m' => 'media_files'}
-			)
-			$app_logger.info "#{__method__} | AWS_DB | Update Result for #{dnis}: '#{result}' | Media Files: #{media_files}"
-		end
+		result = $ivr.stores_edit(params)
 
 		redirect "/stores/results?request_id=#{params['request_id']}"
 	end

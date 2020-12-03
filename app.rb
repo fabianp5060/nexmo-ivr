@@ -149,7 +149,6 @@ class NexmoIVRController
 		# Add any headers that we don't care about to end of the list
 		ordered_store_headers = STORE_HEADER_ORDER
 		store_list.each do |k|
-			puts "store_list: #{k}"
 			next if neat && k == 'open_hours' || k == 'media_files'
 			ordered_store_headers.push(k) unless STORE_HEADER_ORDER.include?(k)
 		end

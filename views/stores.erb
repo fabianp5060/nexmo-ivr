@@ -71,8 +71,9 @@
                         <svg class="Vlt-icon Vlt-blue"><use xlink:href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta-rebrand-fonts-colors/images/icons/Vlt-icon-help.svg#Vlt-icon-help"/></svg>
                       </div>
                     </td>
+                    <% else %>
+                      <td><%=store[k]%></td>                    
                     <% end %>
-                    <td><%=store[k]%></td>
                   <% end %>
                 </tr>
                 <% end %>                                 

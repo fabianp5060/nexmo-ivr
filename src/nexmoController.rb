@@ -154,7 +154,8 @@ class NexmoBasicController
 					key: file_name
 				}
 			)
-			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | AWS_S3 : #{s3_object}"			
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | AWS_S3 : #{s3_object}"
+			File.delete(file_loc)
 		end
 		
 		return download_file_response_code,s3_object

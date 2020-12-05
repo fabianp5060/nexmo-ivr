@@ -119,7 +119,7 @@ class AppRoutes < Sinatra::Base
 			result = $ivr.recording_greeting(params['phone_number'],params['file_name'])
 		rescue => e
 			$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{e} | Redirecting to /error"
-			# redirect "/error?error=post_stores_recording_call&value=#{e}"
+			redirect "/error?error=post_stores_recording_call&value=#{e}"
 		else
 			if result && result.has_key?(:conversation_uuid)
 				if result[:status] == 'busy'
@@ -137,6 +137,21 @@ class AppRoutes < Sinatra::Base
 	post '/stores/recording/upload' do 
 		puts "#{__method__} | Params : #{params}"
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
+
+		begin
+			result = $ivr.upload_greeting(params) if params.has_key?('file_data')
+		rescue => e
+			$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{e} | Redirecting to /error"			
+			redirect "/error?error=post_stores_recording_upload&value=#{e}"
+		else
+			if result.has_key?(:error)
+				$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{result[:error]} | Redirecting to /error"			
+			elsif result.has_key?(:status)
+				r = $ivr.stores_edit({'request_id' => params['request_id'], 'search' => params['search'], 'file_name' => params['file_name']})
+				redirect "/stores/results?request_id=#{params['request_id']}"
+			end
+		end
+
 		200
 
 	end

@@ -253,6 +253,37 @@ class NexmoIVRController
 		end
 	end	
 
+	def upload_greeting(params)
+		$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD : #{params['file_data'].inspect}"
+		result = Hash.new
+		unless (tmpfile = params['file_data']['tempfile']) && (file_data = params['file_data']['filename'])
+			result = {error: "NO_FILE_SELECTED"}
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD ERROR: #{result}"			
+		else
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD START"
+			my_file = File.open("public/wav/#{params['file_name']}", 'wb')
+			while blk = tmpfile.read(65536)
+				my_file.write blk
+			end
+
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD | AWS_S3 START"			
+			upload_file = File.open("public/wav/#{params['file_name']}", 'rb')
+			s3_object = S3_CLIENT.put_object(
+				{
+					body: upload_file,
+					bucket: S3_BUCKET,
+					key: params['file_name']
+				}
+			)
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD | AWS_S3 : #{s3_object}"			
+
+			File.delete(upload_file)
+			result = {status: s3_object}
+		end
+		return result
+
+	end
+
 	def play_next_ncco(request_payload)
 		$app_logger.info "#{__method__} | NEXMO | Getting Next NCCO"
 		dtmf_num = request_payload[:dtmf].to_i

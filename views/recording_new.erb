@@ -58,15 +58,16 @@
     <div class="Vlt-accordion__content">       
       <div class="Vlt-card Vlt-bg-white">
         <div class="Vlt-card__content">
-          <form method="POST" action="/stores/recording/upload">
+          <form method="POST" enctype="multipart/form-data" action="/stores/recording/upload">
             <div class="Vlt-grid Vlt-grid--narrow">
               <div class="Vlt-col Vlt-col--1of2">
                 <input hidden name="request_id" value="<%=@request_id%>" />
+                <input hidden name="search" value="<%=@search%>" />
                 <div class="Vlt-col--A">
                   <div class="Vlt-form__element">
                     <label for="file-name" class="Vlt-label">Save File As:</label>
                     <div class="Vlt-input">
-                      <input type="text" id=file-name name=file_name>
+                      <input type="text" id="file-name" name="file_name">
                     </div>               
                   </div>
                 </div>
@@ -79,7 +80,7 @@
                       <label for="upload_new" class="Vlt-label">Upload Recording:</label>
                       <div class="Vlt-composite">
                         <div class="Vlt-input">
-                          <input type="text" id=upload_new name=file_name>
+                          <input class="form-control" type="file" id="upload_new" name="file_data" />
                         </div>
                         <div class="Vlt-composite__append">
                           <button class="Vlt-btn">Find</button>

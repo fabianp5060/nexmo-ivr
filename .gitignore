@@ -5,3 +5,5 @@ redirect_to_screenpop.zip
 vendor
 .bundle
 testing.rb
+public
+views/test.erb

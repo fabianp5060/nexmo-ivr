@@ -30,6 +30,17 @@ class NexmoBasicController
 		)
 	end
 
+	def make_call(phone_number)
+		$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | NEXMO | Create Call from #{APP_DID} to #{phone_number}"
+		response = @client.voice.create({
+			to: [{type: 'phone', number: phone_number}],
+			from: {type: 'phone', number: APP_DID},
+			answer_url: [ANSWER_URL]
+		})		
+		$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__}| NEXMO | Create Call Result | Response Code : #{response.http_response.code} , Response Body : #{response.http_response.body} | Raw : #{response.inspect}"
+		return response.http_response.code, response.http_response.body
+	end
+
 	def update_webserver
 		puts "My vars: ID: #{APP_ID}, WS: #{WEB_SERVER}, NAME: #{APP_NAME}"
 		application = @client.applications.update(
@@ -97,7 +108,8 @@ class NexmoBasicController
 		@client.files.save(recording_url,local_path)
 	end
 
-	def nexmo_get_cr(recording_url,file_name)
+	def nexmo_get_cr(recording_url,file_name,location=nil)
+		tmp_dir = 'public/wav/'
 		claims = {
 		  application_id: APP_ID,
 		  private_key: APP_KEY,
@@ -116,20 +128,35 @@ class NexmoBasicController
 		request["Content-Type"] = "application/json"
 		request["Authorization"] = "Bearer #{token}"
 
-		file = open(file_name, 'wb')
-		response_code = nil
+		file_loc = open("#{tmp_dir}#{file_name}", 'wb')
+		$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | Download to : #{file_loc}"
+		
+		download_file_response_code = nil
 		begin
 			https.request(request) do |response|
-				response_code = response.code
+				download_file_response_code = response.code
 				response.read_body do |chunk|
-					file.write(chunk)
+					file_loc.write(chunk)
 				end
 			end
+		rescue => e
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD ERROR | #{e}"
 		ensure
-			file.close
+			file_loc.close
+		end
+
+		s3_object = nil
+		if location == :s3
+			s3_object = S3_CLIENT.put_object(
+				{
+					body: file_loc,
+					bucket: S3_BUCKET,
+					key: file_name
+				}
+			)
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | AWS_S3 : #{s3_object}"			
 		end
 		
-		return response_code
+		return download_file_response_code,s3_object
 	end	
-
 end

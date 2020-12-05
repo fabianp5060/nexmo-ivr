@@ -2,6 +2,7 @@
 #
 STDOUT.sync = true
 
+require 'json'
 require 'securerandom'
 require 'dm-core'
 require 'dm-migrations'
@@ -11,6 +12,7 @@ require 'vonage'
 require 'aws-sdk-s3'
 require 'aws-sdk-dynamodb'
 require_relative 'src/aws_dynamo'
+require_relative 'src/nexmo_aws_dynamo_helpers'
 require_relative 'src/nexmoController'
 require_relative 'src/nexmoNCCO'
 require_relative 'src/nexmoIVRRoutes'
@@ -18,12 +20,14 @@ require_relative 'src/appRoutes'
 	
 AWS_DB = AwsDB.new
 AWS_IVR_TABLE = ENV['NEXMO_IVR_TABLE']	
+AWS_CALLS_TABLE = ENV['NEXMO_KRISTPYKREME_CALLS_TABLE']
 
 S3_CLIENT = Aws::S3::Client.new
 S3_BUCKET = ENV['NEXMO_KRISPYKREME_BUCKET_NAME']
 
 NEXMO_CONTROLLER = NexmoBasicController.new
 NCCO = NexmoNCCO.new
+NEXMO_DYNAMO_HELPERS = NexmoDynamoHelpers.new
 
 STORE_HEADER_ORDER = [
 	'name',
@@ -81,6 +85,10 @@ class NexmoIVRController
     	errors = {
     		'search_not_found': "No results found for '#{key}' = '#{value}'",
     		'render_stores': "Unable to display list of stores.  This most likely means that we couldn't access any data from the database but honestly if you're seeing this we haven't accounted for this error.",
+    		'post_edit': "Something went wrong trying to submit your changes.  Please contact your Administrator if the problem continues\nError: #{value}",
+    		'stores_results': "Something went wrong trying to view /stores/results.  Please contact your Administrator if the problem continues\nError: #{value}",
+    		'post_stores_recording_call': "Something went wrong trying to make a call.  Please contact your Administrator if the problem continues\nError: #{value}",
+    		'unable_to_connect': "Unable to connect to phone #{key}.  Error: #{value}",
     		# 'login_error': "Invalid Login Credentials.  Please try again.  Error: '#{err_msg}'",
     		# 'unauthorized': "You have been logged out of your session.  Please login again.",
     		# 'not_registered': "Your client_id is not registered to access this application.  Please contact your administrator to provision your client_id",
@@ -128,15 +136,24 @@ class NexmoIVRController
     	return AWS_DB.scan_table_with_filters(scan_params)		
 	end
 
-	def get_filtered_store_list(dnis_array)
-		request_id = EditStoresDB.add_new_edit_request(dnis_array)
-		$app_logger.info "#{__method__} | DNIS ARRAY: #{dnis_array} | Request ID : #{@request_id}"
+	def filtered_store_list(action, data)
 
+		# If creating new DB entry, return request_id for future reference
+		# Otherwise return empty string and remember to ignore it 
+		dnis_array = data[:dnis_array] || Array.new
+		request_id = "NOT_USED_FOR_GET"
+		request_id = EditStoresDB.add_new_edit_request(dnis_array) if action == :create		
+		dnis_array = EditStoresDB.get_edit_request(data[:request_id])[:dnis_list].split(",") if action == :get
+		
+		$app_logger.info "#{__method__} | FILTER_STORES : Action: #{action.to_s} | DNIS ARRAY: #{dnis_array} |  | Request ID : #{@request_id}"
+
+		# Regardless of :get or :create query dnis's from AWS
 		stores = AWS_DB.scan_table(AWS_IVR_TABLE)[:items]		
 		store_list = Array.new
 		stores.each do |store|
 			store_list.push(store) if dnis_array.include?(store['dnis'])
 		end
+
 		stores_count = store_list.length
 		stores_names = stores[0].keys
 		media_types = stores[0]['media_files'].keys
@@ -192,10 +209,70 @@ class NexmoIVRController
 				$app_logger.info "#{__method__} | AWS_DB | Update CoR and Media File Result for #{dnis}: '#{result}' | Media Files: #{media_files}"
 			end
 
-		end
-
+		end	
 		return 1
 	end
+
+	def recording_greeting(phone_number,file_name)
+
+		begin
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | NEXMO | Make Call To: #{phone_number} with file: #{file_name}"
+			response_code,response_body = NEXMO_CONTROLLER.make_call(phone_number)
+			request_payload = JSON.parse(response_body, symbolize_names: true)
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | NEXMO | Make Call To: #{phone_number} | Result : #{request_payload}"
+
+			db_result = NEXMO_DYNAMO_HELPERS.update_dynamo_event(request_payload)
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | AWS | Add New Call  | Result : #{db_result}"
+
+			result = AWS_DB.update_item(
+				AWS_CALLS_TABLE,
+				{conversation_uuid: request_payload[:conversation_uuid]},
+				"Set #f = :f",
+				{':f' => file_name},
+				"ALL_NEW",
+				{'#f' => 'file_name'}
+			)
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | AWS | Update Call with File: #{file_name}  | Result : #{db_result}"
+
+			status = request_payload[:status]
+			count = 0
+			until status =~ /completed/ || status =~ /busy/ || count > 4 do 
+				puts "count > 4 ? #{count > 4}"
+				puts "status = /completed/? #{status =~ /completed/}"
+				puts "status = /busy/? #{status =~ /busy/}"
+				sleep(10)
+				status = AWS_DB.get_item(AWS_CALLS_TABLE,{conversation_uuid: request_payload[:conversation_uuid]})[:item]['status']
+				count += 1
+				$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | AWS | Waiting for Status completed or busy : #{status} | Count : #{count}"
+			end
+
+		rescue => e
+			return {error: e}
+		else
+			return {conversation_uuid: result[:conversation_uuid], status: status}
+		end
+	end	
+
+	def play_next_ncco(request_payload)
+		$app_logger.info "#{__method__} | NEXMO | Getting Next NCCO"
+		dtmf_num = request_payload[:dtmf].to_i
+		ncco = ""
+
+		case dtmf_num
+		when 1
+			ncco = NCCO.ncco_play_recording_prompt
+		end
+
+		return ncco
+	end
+
+	# def get_cr_greeting(request_payload)
+	# 	$app_logger.info "#{__method__} | NEXMO | Get Call Recording"
+
+
+	# end
+
+
 end
 
 class EditStoresDB
@@ -241,7 +318,7 @@ class MyApp < Sinatra::Base
 	$ivr.logging_setup
 
 	# Configure Nexmo Application
-	$app = NEXMO_CONTROLLER.update_webserver
+	NEXMO_CONTROLLER.update_webserver
 
 	# Configure in-memory DB
 	DataMapper.setup(:default, "sqlite3://#{Dir.pwd}/auth.db")

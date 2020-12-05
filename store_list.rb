@@ -1,5 +1,6 @@
 class Stores
 	def self.list
+		puts "MY filename: #{__LINE__} : #{__FILE__.split('/')[-1]}"
 		[
 			{
 				dnis: '12057586913',

@@ -56,9 +56,10 @@ class AppRoutes < Sinatra::Base
 
 	get '/stores/bulk' do 
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
+		@warning,@error,@succuss = $ivr.get_prompts(params)
 
 		# Create array of DNIS values and filter SCAN results
-		@stores,@stores_count,stores_names,@media_types,@request_id = $ivr.get_filtered_store_list(params.values)
+		@stores,@stores_count,stores_names,@media_types,@request_id = $ivr.filtered_store_list(:create, {dnis_array: params.values})
 		@stores_names = $ivr.get_store_headers(stores_names)
 
 		files = S3_CLIENT.list_objects({bucket: S3_BUCKET, max_keys: 50})[:contents]
@@ -72,22 +73,88 @@ class AppRoutes < Sinatra::Base
 		erb :bulk_edit
 	end
 
-# update_item(table_name,key,update_expression,expression_attribute_values,return_values,expression_attribute_names=nil)
 	post '/stores/edit' do 
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
 
-		result = $ivr.stores_edit(params)
+		begin 
+			if params['file_name'] == 'Add New File'
+				redirect "/stores/recording/new?request_id=#{params['request_id']}&search=#{params['search']}"
+			else
+				result = $ivr.stores_edit(params)
+			end
+		rescue => e
+			$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{e} | Redirecting to /error"
+			redirect "/error?error=post_edit&value=#{e}"
+		else		
+			redirect "/stores/results?request_id=#{params['request_id']}"
+		end
+	
+	end
 
-		redirect "/stores/results?request_id=#{params['request_id']}"
+	get '/stores/recording/new' do 
+		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
+		@warning,@error,@succuss = $ivr.get_prompts(params)
+
+		begin
+			# Create array of DNIS values and filter SCAN results
+			@stores,@stores_count,stores_names,@media_types = $ivr.filtered_store_list(:get, {request_id: params['request_id']})
+			@stores_names = $ivr.get_store_headers(stores_names)			
+			@request_id = params['request_id']
+			@search = params['search']
+		rescue => e
+			puts "#{__method__} | Error : #{e}"
+			$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{e} | Redirecting to /error"
+			redirect "/error?error=rendor_recording_new&value=#{e.to_s}"			
+		else
+			$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"RENDOR")} recording_new.erb"		
+			erb :recording_new			
+		end
+	end
+
+	post '/stores/recording/call' do 
+		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
+		@start_call = nil
+		result = nil
+		begin
+			result = $ivr.recording_greeting(params['phone_number'],params['file_name'])
+		rescue => e
+			$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{e} | Redirecting to /error"
+			# redirect "/error?error=post_stores_recording_call&value=#{e}"
+		else
+			if result && result.has_key?(:conversation_uuid)
+				if result[:status] == 'busy'
+					redirect "/error?error=unable_to_connect&key=#{params['phone_number']}&value=#{result[:status]}"
+				else
+					result = $ivr.stores_edit({'request_id' => params['request_id'], 'search' => params['search'], 'file_name' => params['file_name']})
+					redirect "/stores/results?request_id=#{params['request_id']}"
+				end
+			end
+		end
+		200
+
+	end
+
+	post '/stores/recording/upload' do 
+		puts "#{__method__} | Params : #{params}"
+		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
+		200
+
 	end
 
 	get '/stores/results' do 
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
-		store_list = EditStoresDB.get_edit_request(params['request_id'])[:dnis_list].split(",")
-		@stores,@stores_count,stores_names,@media_types,@request_id = $ivr.get_filtered_store_list(store_list)
-		@stores_names = $ivr.get_store_headers(stores_names)
+		@warning,@error,@succuss = $ivr.get_prompts(params)
 
-		EditStoresDB.delete_edit_request(params['request_id'])
+		begin
+			@stores,@stores_count,stores_names,@media_types = $ivr.filtered_store_list(:get, {request_id: params['request_id']})
+			@stores_names = $ivr.get_store_headers(stores_names)
+			@request_id = params['request_id']
+		rescue => e
+			$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{e} | Redirecting to /error"
+			redirect "/error?error=stores_results&value=#{e}"
+		else
+			EditStoresDB.delete_edit_request(params['request_id'])
+		end
 
 		erb :bulk_result
 	end
@@ -106,5 +173,7 @@ class AppRoutes < Sinatra::Base
 		$app_logger.info "#{__method__} | Destroy dB | #{EditStoresDB.destroy}"
 	end
 
-
+	get '/test' do 
+		erb :test
+	end
 end

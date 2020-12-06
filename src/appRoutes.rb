@@ -58,19 +58,29 @@ class AppRoutes < Sinatra::Base
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"
 		@warning,@error,@succuss = $ivr.get_prompts(params)
 
-		# Create array of DNIS values and filter SCAN results
-		@stores,@stores_count,stores_names,@media_types,@request_id = $ivr.filtered_store_list(:create, {dnis_array: params.values})
-		@stores_names = $ivr.get_store_headers(stores_names)
+		begin
+			# Create array of DNIS values and filter SCAN results
+			@stores,@stores_count,stores_names,@media_types,@request_id = $ivr.filtered_store_list(:create, {dnis_array: params.values})
+			@stores_names = $ivr.get_store_headers(stores_names)
 
-		files = S3_CLIENT.list_objects({bucket: S3_BUCKET, max_keys: 50})[:contents]
-		@existing_files = Array.new
-		files.each do |file|
-			@existing_files.push(file['key'])
+			files = S3_CLIENT.list_objects({bucket: S3_BUCKET, max_keys: 50})[:contents]
+			@existing_files = Array.new
+			files.each do |file|
+				@existing_files.push(file['key'])
+			end
+			@existing_files.push("Add New File")
+		rescue => e
+			$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{e} | Redirecting to /error"
+			redirect "/error?error=stores_bulk&value=#{e}"
+		else
+			$app_logger.debug "#{__method__} | Files : #{files} | Filtered List : #{@existing_files} | Store Headers : #{@stores_names} | Rendor bulk_edit"
+			if @stores_count < 1
+				redirect "/stores?error=no_stores_selected"
+			end
+			erb :bulk_edit
 		end
-		@existing_files.push("Add New File")
-		$app_logger.debug "#{__method__} | Files : #{files} | Filtered List : #{@existing_files} | Store Headers : #{@stores_names}"
 
-		erb :bulk_edit
+		
 	end
 
 	post '/stores/edit' do 
@@ -124,6 +134,8 @@ class AppRoutes < Sinatra::Base
 			if result && result.has_key?(:conversation_uuid)
 				if result[:status] == 'busy'
 					redirect "/error?error=unable_to_connect&key=#{params['phone_number']}&value=#{result[:status]}"
+				elsif result[:status] == 'failed_to_get_recording'
+					redirect "/stores/recording/new?request_id=#{params['request_id']}&error=#{result[:status]}"
 				else
 					result = $ivr.stores_edit({'request_id' => params['request_id'], 'search' => params['search'], 'file_name' => params['file_name']})
 					redirect "/stores/results?request_id=#{params['request_id']}"
@@ -142,13 +154,15 @@ class AppRoutes < Sinatra::Base
 			result = $ivr.upload_greeting(params) if params.has_key?('file_data')
 		rescue => e
 			$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{e} | Redirecting to /error"			
-			redirect "/error?error=post_stores_recording_upload&value=#{e}"
+			redirect "/stores/recording/new?request_id=#{params['request_id']}&error=post_stores_recording_upload&value=#{e}"
 		else
 			if result.has_key?(:error)
-				$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{result[:error]} | Redirecting to /error"			
+				$app_logger.error "#{$ivr.html_logging_prefix(__method__,request,"ERROR")} #{result[:error]} | Redirecting back with Error"			
+				redirect "/stores/recording/new?request_id=#{params['request_id']}&error=#{result[:error]}&value=#{result[:value]}"
+
 			elsif result.has_key?(:status)
 				r = $ivr.stores_edit({'request_id' => params['request_id'], 'search' => params['search'], 'file_name' => params['file_name']})
-				redirect "/stores/results?request_id=#{params['request_id']}"
+				redirect "/stores/results?request_id=#{params['request_id']}&success=file_upload_success&key=#{r[:stores_updated]}&value=#{r[:store_or_stores]}"
 			end
 		end
 

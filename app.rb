@@ -83,23 +83,22 @@ class NexmoIVRController
     	key = data[:key] || nil
     	value = data[:value] || nil
     	errors = {
+    		'no_stores_selected': "No stores selected.  Please select one or more stores to edit",
     		'search_not_found': "No results found for '#{key}' = '#{value}'",
     		'render_stores': "Unable to display list of stores.  This most likely means that we couldn't access any data from the database but honestly if you're seeing this we haven't accounted for this error.",
     		'post_edit': "Something went wrong trying to submit your changes.  Please contact your Administrator if the problem continues\nError: #{value}",
     		'stores_results': "Something went wrong trying to view /stores/results.  Please contact your Administrator if the problem continues\nError: #{value}",
     		'post_stores_recording_call': "Something went wrong trying to make a call.  Please contact your Administrator if the problem continues\nError: #{value}",
     		'unable_to_connect': "Unable to connect to phone #{key}.  Error: #{value}",
+    		'failed_to_get_recording': "Failed to save new greeting or greeting length was too short.  Please try recording your greeting again.",
+    		'rendor_recording_new': "Well this is an unexpected error.  The error was: #{value} and we were not prepared to handle this.  Please try your request again",
+    		'post_stores_recording_upload': "Error uploading File: #{value}",
+    		'file_upload_success': "Successfully Updates Stores",
+    		'WRONG_FILE_TYPE': "Error Uploading File.  Unsupported file type of '#{value}'.  Please upload only wav or mp3 files",
     		# 'login_error': "Invalid Login Credentials.  Please try again.  Error: '#{err_msg}'",
     		# 'unauthorized': "You have been logged out of your session.  Please login again.",
     		# 'not_registered': "Your client_id is not registered to access this application.  Please contact your administrator to provision your client_id",
     		# 'session_expired': "Your session has expired.  Please login again",
-    		# 'update_all_fields': "Make sure every field is populated.  Submitting with blank fields will cause data to be erased",
-    		# 'delete_ok': "'#{dnis}' successfully deleted",
-    		# 'edit_ok': "'#{dnis}' successfully edited",
-    		# 'delete_failed': "'#{dnis}' could not be deleted.  Request failed with error: '#{err_msg}'",
-    		# 'edit_failed': "'#{dnis}' could not be edited.  Request failed with error: '#{err_msg}'",
-    		# 'unknown_request': "An unknown error has occurred.  Please try your request again or contact your administrator",
-    		# 'query_not_found': "Unable to find requested DNIS of '#{dnis}' with trigger_pop '#{trigger_pop}'",
     	}  	
 
     	return errors[error.to_sym]
@@ -118,10 +117,12 @@ class NexmoIVRController
 				params.delete('key')
 				params.delete('value')
 			elsif params.has_key?('error')
+				error = error_responses(params['error'],{key: params['key'], value: params['value']})				
 			elsif params.has_key?('success')
+				success = error_responses(params['success'],{key: params['key'], value: params['value']})
 			end
 		end
-		$app_logger.debug "#{__method__} | Params Out: #{params}"
+		$app_logger.debug "#{__method__} | Params Out: Warning: #{warning}, Error: #{error}, Success: #{success}"
 
 		return warning,error,success
     end	
@@ -210,7 +211,8 @@ class NexmoIVRController
 			end
 
 		end	
-		return 1
+		store_or_stores = dnis_list.length > 1 ? 'Stores' : 'Store'
+		return {stores_updated: "#{dnis_list.length}", store_or_stores: store_or_stores}
 	end
 
 	def recording_greeting(phone_number,file_name)
@@ -234,6 +236,7 @@ class NexmoIVRController
 			)
 			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | AWS | Update Call with File: #{file_name}  | Result : #{db_result}"
 
+			item = Hash.new
 			status = request_payload[:status]
 			count = 0
 			until status =~ /completed/ || status =~ /busy/ || count > 4 do 
@@ -241,7 +244,8 @@ class NexmoIVRController
 				puts "status = /completed/? #{status =~ /completed/}"
 				puts "status = /busy/? #{status =~ /busy/}"
 				sleep(10)
-				status = AWS_DB.get_item(AWS_CALLS_TABLE,{conversation_uuid: request_payload[:conversation_uuid]})[:item]['status']
+				item = AWS_DB.get_item(AWS_CALLS_TABLE,{conversation_uuid: request_payload[:conversation_uuid]})[:item]
+				status = item['status']
 				count += 1
 				$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | AWS | Waiting for Status completed or busy : #{status} | Count : #{count}"
 			end
@@ -249,37 +253,56 @@ class NexmoIVRController
 		rescue => e
 			return {error: e}
 		else
-			return {conversation_uuid: result[:conversation_uuid], status: status}
+			if item.has_key?('size') && item['size'] > 150000
+				return {conversation_uuid: result[:conversation_uuid], status: status}
+			else
+				result = AWS_DB.update_item(
+					AWS_CALLS_TABLE,
+					{conversation_uuid: request_payload[:conversation_uuid]},
+					"Set #f = :f",
+					{':f' => ''},
+					"ALL_NEW",
+					{'#f' => 'file_name'}
+				)	
+				$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | AWS | No Recording found or Recording too short | Deleted filename: #{result}"
+				return {conversation_uuid: result[:conversation_uuid], status: 'failed_to_get_recording'}
+			end
 		end
 	end	
 
 	def upload_greeting(params)
 		$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD : #{params['file_data'].inspect}"
 		result = Hash.new
-		unless (tmpfile = params['file_data']['tempfile']) && (file_data = params['file_data']['filename'])
-			result = {error: "NO_FILE_SELECTED"}
-			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD ERROR: #{result}"			
-		else
-			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD START"
-			my_file = File.open("public/wav/#{params['file_name']}", 'wb')
-			while blk = tmpfile.read(65536)
-				my_file.write blk
+		if (tmpfile = params['file_data']['tempfile']) && (file_data = params['file_data']['filename'])
+			# Only upload if file is of type mp3: audio/mpeg or wav: audio/wav	
+			if params['file_data']['type'] == 'audio/mpeg' || params['file_data']['type'] == 'audio/wav'
+				$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD START"
+				my_file = File.open("public/wav/#{params['file_name']}", 'wb')
+				while blk = tmpfile.read(65536)
+					my_file.write blk
+				end
+
+				$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD | AWS_S3 START"			
+				upload_file = File.open("public/wav/#{params['file_name']}", 'rb')
+				s3_object = S3_CLIENT.put_object(
+					{
+						body: upload_file,
+						bucket: S3_BUCKET,
+						key: params['file_name']
+					}
+				)
+				$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD | AWS_S3 : #{s3_object}"			
+
+				File.delete(upload_file)
+				result = {status: s3_object}
+			else
+				result = {error: "WRONG_FILE_TYPE", value: params['file_data']['type']}
 			end
-
-			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD | AWS_S3 START"			
-			upload_file = File.open("public/wav/#{params['file_name']}", 'rb')
-			s3_object = S3_CLIENT.put_object(
-				{
-					body: upload_file,
-					bucket: S3_BUCKET,
-					key: params['file_name']
-				}
-			)
-			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD | AWS_S3 : #{s3_object}"			
-
-			File.delete(upload_file)
-			result = {status: s3_object}
+		else
+			result = {error: "NO_FILE_SELECTED"}
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | FILE UPLOAD ERROR: #{result}"
 		end
+
 		return result
 
 	end

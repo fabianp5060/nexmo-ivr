@@ -56,12 +56,10 @@ class NexmoIVRRoutes < Sinatra::Base
 		file_name = call_info[:attributes]['file_name'] # || "#{request_payload[:conversation_uuid]}.wav"
 		$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | AWS_DB | Filename : #{file_name}"
 
-		# if request_payload.has_key?(:recording_uuid)
-			$app_logger.debug("#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | Get File : #{request_payload[:recording_url]}")			
-			cr_download_result,s3_object = NEXMO_CONTROLLER.nexmo_get_cr(request_payload[:recording_url],file_name,:s3)
-			$app_logger.debug("#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | Download Recording Result: #{cr_download_result}")
+		$app_logger.debug("#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | Get File : #{request_payload[:recording_url]}")			
+		cr_download_result,s3_object = NEXMO_CONTROLLER.nexmo_get_cr(request_payload[:recording_url],file_name,:s3)
+		$app_logger.debug("#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | Download Recording Result: #{cr_download_result}")
 			
-		# end
 
 		return 200
 	end		

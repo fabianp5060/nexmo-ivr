@@ -1,135 +1,134 @@
-<div class="Vlt-col Vlt-col--2of3">
-  <h3>Adding New Greeting for <%=@stores_count%> Stores</h3>
-  <div class="Vlt-accordion Vlt-accordion--icons">
-    <button class="Vlt-accordion__trigger">
-      <svg><use xlink:href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta2/images/icons/Vlt-icon-call-2.svg#Vlt-icon-call-2"/></svg>
-      Record New Greeting
-    </button>
-    <div class="Vlt-accordion__content">
-      <div class="Vlt-card Vlt-bg-white">        
-      	<div class="Vlt-card__content">
-          <% if @start_call %>
-            <div class="Vlt-callout Vlt-callout--banner Vlt-callout--shoutout">
-              <i></i>
-              <div class="Vlt-callout__content">
-                <p>Calling @phone_number to record new greeting.  This page will automatically refresh when recording is finished</p>
+<h3>Adding New Greeting for <%=@stores_count%> Stores</h3>
+<div class="Vlt-accordion Vlt-accordion--icons">
+  <button class="Vlt-accordion__trigger">
+    <svg><use xlink:href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta2/images/icons/Vlt-icon-call-2.svg#Vlt-icon-call-2"/></svg>
+    Record New Greeting
+  </button>
+  <div class="Vlt-accordion__content">
+    <div class="Vlt-card Vlt-bg-white">        
+    	<div class="Vlt-card__content">
+        <% if @start_call %>
+          <div class="Vlt-callout Vlt-callout--banner Vlt-callout--shoutout">
+            <i></i>
+            <div class="Vlt-callout__content">
+              <p>Calling @phone_number to record new greeting.  This page will automatically refresh when recording is finished</p>
+            </div>
+          </div>
+        <% end %>
+        <form method="POST" action="/stores/recording/call">
+          <div class="Vlt-grid Vlt-grid--narrow">
+            <div class="Vlt-col Vlt-col--1of2">
+              <input hidden name="request_id" value="<%=@request_id%>" />
+              <input hidden name="search" value="<%=@search%>" />
+              <div class="Vlt-col--A">
+                <div class="Vlt-form__element">
+                  <label for="record_new" class="Vlt-label">Save Recording As:</label>
+                  <div class="Vlt-input">
+                    <input type="text" id=record_new name=file_name>
+                  </div>                            
+                </div>
+              </div>
+            </div>        
+            <div class="Vlt-col Vlt-col--2of2">        
+              <input hidden name="request_id" value="<%=@request_id%>" />
+              <div class="Vlt-col--A">
+                <div class="Vlt-form__element">
+                  <label for="phone_call" class="Vlt-label">Enter Phone Number to Call</label>
+                  <div class="Vlt-composite">
+                    <div class="Vlt-input">
+                      <input type="text" id=phone_call name=phone_number>
+                    </div>
+                    <div class="Vlt-composite__append">
+                      <button class="Vlt-btn">Dial</button>
+                    </div>                  
+                  </div>            
+                </div>
               </div>
             </div>
-          <% end %>
-          <form method="POST" action="/stores/recording/call">
-            <div class="Vlt-grid Vlt-grid--narrow">
-              <div class="Vlt-col Vlt-col--1of2">
-                <input hidden name="request_id" value="<%=@request_id%>" />
-                <input hidden name="search" value="<%=@search%>" />
-                <div class="Vlt-col--A">
-                  <div class="Vlt-form__element">
-                    <label for="record_new" class="Vlt-label">Save Recording As:</label>
-                    <div class="Vlt-input">
-                      <input type="text" id=record_new name=file_name>
-                    </div>                            
-                  </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <button class="Vlt-accordion__trigger">
+    <svg><use xlink:href="https://s3-us-west-2.amazonaws.com/assets-petesweb.io/assets/volta2/images/icons/Vlt-icon-cloud-upload.svg#Vlt-icon-cloud-upload"/></svg>
+    Upload New Greeting
+  </button> 
+  <div class="Vlt-accordion__content">       
+    <div class="Vlt-card Vlt-bg-white">
+      <div class="Vlt-card__content">
+        <form method="POST" enctype="multipart/form-data" action="/stores/recording/upload">
+          <div class="Vlt-grid Vlt-grid--narrow">
+            <div class="Vlt-col Vlt-col--1of2">
+              <input hidden name="request_id" value="<%=@request_id%>" />
+              <input hidden name="search" value="<%=@search%>" />
+              <div class="Vlt-col--A">
+                <div class="Vlt-form__element">
+                  <label for="file-name" class="Vlt-label">Save File As:</label>
+                  <div class="Vlt-input">
+                    <input type="text" id="file-name" name="file_name">
+                  </div>               
                 </div>
-              </div>        
-              <div class="Vlt-col Vlt-col--2of2">        
-                <input hidden name="request_id" value="<%=@request_id%>" />
+              </div>
+            </div>
+            <div class="Vlt-col Vlt-col--2of2">        
+              <input hidden name="request_id" value="<%=@request_id%>" />
+              <div class="Vlt-grid Vlt-grid--narrow">      
                 <div class="Vlt-col--A">
                   <div class="Vlt-form__element">
-                    <label for="phone_call" class="Vlt-label">Enter Phone Number to Call</label>
+                    <label for="upload_new" class="Vlt-label">Upload Recording:</label>
                     <div class="Vlt-composite">
                       <div class="Vlt-input">
-                        <input type="text" id=phone_call name=phone_number>
+                        <input class="form-control" type="file" id="upload_new" name="file_data" />
                       </div>
                       <div class="Vlt-composite__append">
-                        <button class="Vlt-btn">Dial</button>
+                        <button class="Vlt-btn">Find</button>
                       </div>                  
                     </div>            
                   </div>
                 </div>
-              </div>
+              </div>             
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    <button class="Vlt-accordion__trigger">
-      <svg><use xlink:href="https://s3-us-west-2.amazonaws.com/assets-petesweb.io/assets/volta2/images/icons/Vlt-icon-cloud-upload.svg#Vlt-icon-cloud-upload"/></svg>
-      Upload New Greeting
-    </button> 
-    <div class="Vlt-accordion__content">       
-      <div class="Vlt-card Vlt-bg-white">
-        <div class="Vlt-card__content">
-          <form method="POST" enctype="multipart/form-data" action="/stores/recording/upload">
-            <div class="Vlt-grid Vlt-grid--narrow">
-              <div class="Vlt-col Vlt-col--1of2">
-                <input hidden name="request_id" value="<%=@request_id%>" />
-                <input hidden name="search" value="<%=@search%>" />
-                <div class="Vlt-col--A">
-                  <div class="Vlt-form__element">
-                    <label for="file-name" class="Vlt-label">Save File As:</label>
-                    <div class="Vlt-input">
-                      <input type="text" id="file-name" name="file_name">
-                    </div>               
-                  </div>
-                </div>
-              </div>
-              <div class="Vlt-col Vlt-col--2of2">        
-                <input hidden name="request_id" value="<%=@request_id%>" />
-                <div class="Vlt-grid Vlt-grid--narrow">      
-                  <div class="Vlt-col--A">
-                    <div class="Vlt-form__element">
-                      <label for="upload_new" class="Vlt-label">Upload Recording:</label>
-                      <div class="Vlt-composite">
-                        <div class="Vlt-input">
-                          <input class="form-control" type="file" id="upload_new" name="file_data" />
-                        </div>
-                        <div class="Vlt-composite__append">
-                          <button class="Vlt-btn">Find</button>
-                        </div>                  
-                      </div>            
-                    </div>
-                  </div>
-                </div>             
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="Vlt-card Vlt-bg-white">
-    <div class="Vlt-card__content">
-      <div class="Vlt-grid__separator"><!--notes--></div>
-      <div class="Vlt-table Vlt-table--data Vlt-table--cols">
-        <table>
-          <thead>
-            <tr>
-            <% @stores_names.each do |k| %>
-                <th><b><%=k%></b></th>
-            <% end %>
-            </tr>    
-          </thead>
-          <tbody>
-              <% @stores.each do |store| %>
-                <% @stores_names.each do |k| %>
-                <% if k == 'closed_for_reason' %>
-                <td>
-                  <%=store[k]%>
-                  <div class="Vlt-tooltip Vlt-tooltip--top" title="<%=store['media_files'][store['closed_for_reason']]%>">
-                    <svg class="Vlt-icon Vlt-blue"><use xlink:href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta-rebrand-fonts-colors/images/icons/Vlt-icon-help.svg#Vlt-icon-help"/></svg>
-                  </div>
-                </td>
-                <% else %> 
-                  <td><%=store[k]%></td>
-                <% end %>
-              <% end %>                   
-              </tr>
-              <% end %>             
-          </tbody>            
-        </table>         
+          </div>
+        </form>
       </div>
     </div>
   </div>
 </div>
+<div class="Vlt-card Vlt-bg-white">
+  <div class="Vlt-card__content">
+    <div class="Vlt-grid__separator"><!--notes--></div>
+    <div class="Vlt-table Vlt-table--data Vlt-table--cols">
+      <table>
+        <thead>
+          <tr>
+          <% @stores_names.each do |k| %>
+              <th><b><%=k%></b></th>
+          <% end %>
+          </tr>    
+        </thead>
+        <tbody>
+            <% @stores.each do |store| %>
+              <% @stores_names.each do |k| %>
+              <% if k == 'closed_for_reason' %>
+              <td>
+                <%=store[k]%>
+                <div class="Vlt-tooltip Vlt-tooltip--top" title="<%=store['media_files'][store['closed_for_reason']]%>">
+                  <svg class="Vlt-icon Vlt-blue"><use xlink:href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta-rebrand-fonts-colors/images/icons/Vlt-icon-help.svg#Vlt-icon-help"/></svg>
+                </div>
+              </td>
+              <% else %> 
+                <td><%=store[k]%></td>
+              <% end %>
+            <% end %>                   
+            </tr>
+            <% end %>             
+        </tbody>            
+      </table>         
+    </div>
+  </div>
+</div>
+
 
 
 

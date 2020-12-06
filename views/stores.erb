@@ -1,108 +1,110 @@
-<div class="Vlt-col Vlt-col--2of3">
-  <h3><%=@stores_action%> <%=@stores_count%> Stores</h3>
-  <div class="Vlt-accordion">
-    <button class="Vlt-accordion__trigger">Search Stores</button>
-    <div class="Vlt-accordion__content">
-      <div class="Vlt-card Vlt-bg-white">
-      	<div class="Vlt-card__content">
-          <form method="GET" action="/stores">
-            <div class="Vlt-grid Vlt-grid--narrow">
-              <div class="Vlt-col--A">
-                <div class="Vlt-form__element">
-                  <label class="Vlt-label" for="c_search">Search Column</label>
-                  <div class="Vlt-select">
-                    <select id="c_search" name="search">
-                      <option selected disabled>Choose Column</option>
-                      <% @stores_names.each do |k| %>
-                      <option value="<%=k%>"><%=k%></option>
-                      <% end %>
-                    </select>
-                  </div>
+<h3><%=@stores_action%> <%=@stores_count%> Stores</h3>
+<div class="Vlt-accordion">
+  <button class="Vlt-accordion__trigger">
+    <svg><use xlink:href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta-rebrand-fonts-colors/images/icons/Vlt-icon-file-search.svg#Vlt-icon-file-search"/></svg>
+    Search Stores
+  </button>
+  <div class="Vlt-accordion__content">
+    <div class="Vlt-card Vlt-bg-white">
+    	<div class="Vlt-card__content">
+        <form method="GET" action="/stores">
+          <div class="Vlt-grid Vlt-grid--narrow">
+            <div class="Vlt-col--A">
+              <div class="Vlt-form__element">
+                <label class="Vlt-label" for="c_search">Search Column</label>
+                <div class="Vlt-select">
+                  <select id="c_search" name="search">
+                    <option selected disabled>Choose Column</option>
+                    <% @stores_names.each do |k| %>
+                    <option value="<%=k%>"><%=k%></option>
+                    <% end %>
+                  </select>
                 </div>
               </div>
-              <div class="Vlt-col--A">
-                <div class="Vlt-form__element">
-                  <label class="Vlt-label">Contains:</label>
-                  <div class="Vlt-input">
-                    <input type="text" name=value>
-                  </div>
+            </div>
+            <div class="Vlt-col--A">
+              <div class="Vlt-form__element">
+                <label class="Vlt-label">Contains:</label>
+                <div class="Vlt-input">
+                  <input type="text" name=value>
                 </div>
               </div>
-              <div class="VLT-col--A">
-                <div class="Vlt-form__element"> 
-                  <label class="Vlt-label"></label>
-                  <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" type="Submit">Search</button>
-                </div>
+            </div>
+            <div class="VLT-col--A">
+              <div class="Vlt-form__element"> 
+                <label class="Vlt-label"></label>
+                <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" type="Submit">Search</button>
               </div>
-            </div>              
-          </form>
-        </div>
-      </div> 
-    </div>
+            </div>
+          </div>              
+        </form>
+      </div>
+    </div> 
   </div>
-  <div class="Vlt-card Vlt-bg-white">
-    <div class="Vlt-card__content">                  
-      <div class="Vlt-grid__separator"><!--notes--></div>
-      <div class="Vlt-table Vlt-table--data Vlt-table--cols Vlt-table--sortable" data-sortable>
-        <form method="GET" id="bulk_edit" action="/stores/bulk">
-          <div class="Vlt-col VLT-col--A">
-            <div class="Vlt-form__element">
-              <label class="Vlt-label"></label>
-              <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" id="bulk_edit" type="Submit">Edit Selected</button>
-            </div>   
-          </div>
-          <table>
-            <thead>
-              <tr>
-                  <th>
-                    <div class="Vlt-checkbox Vlt-checkbox--inline">
-                      <label for="select-all">
-                        <span class="Vlt-checkbox__button">
-                          <input type="checkbox" id="select-all"/>
-                          <span class="Vlt-checkbox__icon"></span>                          
-                        </span>
-                      </label>
-                    </div>
-                  </th>
-                  <% @stores_names.each do |k| %>
-                    <th><b><%=k%></b></th>
-                  <% end %>              
-              </tr>    
-            </thead>
-            <tbody>
-                <% @stores.each do |store| %>
-                <tr class="Vlt-btn-on-hover">
+</div>
+<div class="Vlt-card Vlt-bg-white">
+  <div class="Vlt-card__content">                  
+    <div class="Vlt-grid__separator"><!--notes--></div>
+    <div class="Vlt-table Vlt-table--data Vlt-table--cols Vlt-table--sortable" data-sortable>
+      <form method="GET" id="bulk_edit" action="/stores/bulk">
+        <div class="Vlt-col VLT-col--A">
+          <div class="Vlt-form__element">
+            <label class="Vlt-label"></label>
+            <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" id="bulk_edit" type="Submit">Edit Selected</button>
+          </div>   
+        </div>
+        <table>
+          <thead>
+            <tr>
+                <th>
+                  <div class="Vlt-checkbox Vlt-checkbox--inline">
+                    <label for="select-all">
+                      <span class="Vlt-checkbox__button">
+                        <input type="checkbox" id="select-all"/>
+                        <span class="Vlt-checkbox__icon"></span>                          
+                      </span>
+                    </label>
+                  </div>
+                </th>
+                <% @stores_names.each do |k| %>
+                  <th><b><%=k%></b></th>
+                <% end %>              
+            </tr>    
+          </thead>
+          <tbody>
+              <% @stores.each do |store| %>
+              <tr class="Vlt-btn-on-hover">
+                <td>
+                  <div class="Vlt-checkbox Vlt-checkbox--inline">
+                    <label for="checkmark_<%=store['dnis']%>">
+                      <span class="Vlt-checkbox__button">
+                        <input type="checkbox" id="checkmark_<%=store['dnis']%>" name="checkmark_<%=store['dnis']%>" value=<%=store['dnis']%> />
+                        <span class="Vlt-checkbox__icon"></span>
+                      </span>
+                    </label>
+                  </div>
+                </td>
+                <% @stores_names.each do |k| %>
+                  <% if k == 'closed_for_reason' %>
                   <td>
-                    <div class="Vlt-checkbox Vlt-checkbox--inline">
-                      <label for="checkmark_<%=store['dnis']%>">
-                        <span class="Vlt-checkbox__button">
-                          <input type="checkbox" id="checkmark_<%=store['dnis']%>" name="checkmark_<%=store['dnis']%>" value=<%=store['dnis']%> />
-                          <span class="Vlt-checkbox__icon"></span>
-                        </span>
-                      </label>
+                    <%=store[k]%>
+                    <div class="Vlt-tooltip Vlt-tooltip--right" title="<%=store['media_files'][store['closed_for_reason']]%>">
+                      <svg class="Vlt-icon Vlt-blue"><use xlink:href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta-rebrand-fonts-colors/images/icons/Vlt-icon-help.svg#Vlt-icon-help"/></svg>
                     </div>
                   </td>
-                  <% @stores_names.each do |k| %>
-                    <% if k == 'closed_for_reason' %>
-                    <td>
-                      <%=store[k]%>
-                      <div class="Vlt-tooltip Vlt-tooltip--top" title="<%=store['media_files'][store['closed_for_reason']]%>">
-                        <svg class="Vlt-icon Vlt-blue"><use xlink:href="https://d2gl3otkt8l7qr.cloudfront.net/assets/volta-rebrand-fonts-colors/images/icons/Vlt-icon-help.svg#Vlt-icon-help"/></svg>
-                      </div>
-                    </td>
-                    <% else %>
-                      <td><%=store[k]%></td>                    
-                    <% end %>
+                  <% else %>
+                    <td><%=store[k]%></td>                    
                   <% end %>
-                </tr>
-                <% end %>                                 
-              </form>              
-            </tbody>            
-          </table>         
-      </div>
+                <% end %>
+              </tr>
+              <% end %>                                 
+            </form>              
+          </tbody>            
+        </table>         
     </div>
   </div>
 </div>
+
 
 <script>
   // Listen for click on toggle checkbox

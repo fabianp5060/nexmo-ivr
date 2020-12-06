@@ -57,6 +57,7 @@
       <div class="Vlt-col">       
       </div>
       <div class="Vlt-col Vlt-col--3of4">
+        <div class="Vlt-col Vlt-col--2of3">
           <% if @error %>
             <div class="Vlt-callout Vlt-callout--critical">
               <i></i>
@@ -86,7 +87,8 @@
               </div>
             </div>  
           <% end %>
-        <%= yield %>        
+        <%= yield %>  
+        </div>      
       </div>
       <div class="Vlt-col">       
       </div>                          

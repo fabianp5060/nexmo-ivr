@@ -28,6 +28,7 @@ S3_BUCKET = ENV['NEXMO_KRISPYKREME_BUCKET_NAME']
 NEXMO_CONTROLLER = NexmoBasicController.new
 NCCO = NexmoNCCO.new
 NEXMO_DYNAMO_HELPERS = NexmoDynamoHelpers.new
+NEXMO_TMP_DIR = 'public/wav/'
 
 STORE_HEADER_ORDER = [
 	'name',
@@ -239,10 +240,7 @@ class NexmoIVRController
 			item = Hash.new
 			status = request_payload[:status]
 			count = 0
-			until status =~ /completed/ || status =~ /busy/ || count > 4 do 
-				puts "count > 4 ? #{count > 4}"
-				puts "status = /completed/? #{status =~ /completed/}"
-				puts "status = /busy/? #{status =~ /busy/}"
+			until status =~ /completed/ || status =~ /busy/ || count > 10 do 
 				sleep(10)
 				item = AWS_DB.get_item(AWS_CALLS_TABLE,{conversation_uuid: request_payload[:conversation_uuid]})[:item]
 				status = item['status']
@@ -308,23 +306,64 @@ class NexmoIVRController
 	end
 
 	def play_next_ncco(request_payload)
-		$app_logger.info "#{__method__} | NEXMO | Getting Next NCCO"
+		$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__}  | NEXMO | Getting Next NCCO"
 		dtmf_num = request_payload[:dtmf].to_i
 		ncco = ""
 
 		case dtmf_num
 		when 1
-			ncco = NCCO.ncco_play_recording_prompt
+			ncco = NCCO.ncco_play_recording_prompt		
 		end
 
 		return ncco
 	end
 
-	# def get_cr_greeting(request_payload)
-	# 	$app_logger.info "#{__method__} | NEXMO | Get Call Recording"
+	def validate_recording(request_payload)
+		dtmf_num = request_payload[:dtmf].to_i
 
+		ncco = ""
+		begin 
+			item = AWS_DB.get_item(AWS_CALLS_TABLE,{conversation_uuid: request_payload[:conversation_uuid]})[:item]
+			file = S3_CLIENT.get_object({bucket: S3_BUCKET, key: item['file_name']})
+			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__}  | NEXMO AWS | item : #{item} | file : #{file}"
 
-	# end
+			if item.has_key?('file_name')
+				case dtmf_num
+				when 1
+					if file['content_length'] > 0
+						ncco = NCCO.ncco_play_recording_success(item['file_name'])
+					else
+						$app_logger.debug "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__}  | NEXMO AWS | File length less then 0"
+						ncco = NCCO.ncco_play_recording_error
+					end
+				when 2
+					ncco = NCCO.ncco_play_recording_back(item['file_name'])
+				when 3
+					file = S3_CLIENT.delete_object({bucket: S3_BUCKET, key: item['file_name']})
+					$app_logger.debug "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__}  | NEXMO AWS | Delete object and rerecord result : #{file}"
+					ncco = NCCO.ncco_play_recording_prompt
+				end
+			else
+				$app_logger.debug "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__}  | NEXMO AWS | File Name Not Found with conversation_uuid; #{request_payload[:conversation_uuid]}"
+				ncco = NCCO.ncco_play_recording_error
+			end
+
+		rescue => e
+			$app_logger.debug "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__}  | NEXMO AWS | Unhandled Error : #{e}"
+			ncco = NCCO.ncco_play_recording_error			
+		end	
+
+		return ncco		
+	end
+
+	def post_call_cleanup(conversation_uuid)
+		$app_logger.debug "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__}  | request_payload : #{conversation_uuid}"
+
+		item = AWS_DB.get_item(AWS_CALLS_TABLE,{conversation_uuid: conversation_uuid})[:item]
+		File.delete("#{NEXMO_TMP_DIR}#{item['file_name']}")
+		$app_logger.debug "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__}  | Delete Temp File: #{NEXMO_TMP_DIR}#{item['file_name']}"
+		return 1
+	end
 
 
 end
@@ -365,9 +404,10 @@ class MyApp < Sinatra::Base
     # Set Root Directories
     $root_dir = File.dirname(__FILE__)
     $views_dir = Proc.new { File.join(root, "views") } 
+    $public_dir = File.join($root_dir,"public")
 	set :root, $root_dir
 	set :views, $views_dir
-	
+
 	$ivr = NexmoIVRController.new
 	$ivr.logging_setup
 

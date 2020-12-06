@@ -5,7 +5,7 @@ APP_KEY = ENV['NEXMO_APPLICATION_PRIVATE_KEY_PATH']
 WEB_SERVER = ENV['LB_WEB_SERVER2'] || JSON.parse(Net::HTTP.get(URI('http://127.0.0.1:4040/api/tunnels')))['tunnels'][0]['public_url']
 # WEB_SERVER = ENV['AWS_WEB_SERVER']
 # NEXMO_STREAM_URL = "#{WEB_SERVER}/stream/poly/"
-# NEXMO_STREAM_URL2 = "#{WEB_SERVER}/stream/cr/"
+NEXMO_STREAM_URL = "#{WEB_SERVER}/stream/cr/"
 
 # Vonage Specific Demo Environment
 APP_NAME = ENV["#{'nexmo_ivr'.upcase}_APP_NAME"]
@@ -108,8 +108,11 @@ class NexmoBasicController
 		@client.files.save(recording_url,local_path)
 	end
 
-	def nexmo_get_cr(recording_url,file_name,location=nil)
-		tmp_dir = 'public/wav/'
+	# Provide recording url from record event, 
+	#   file_name to save the file as, and temp directory (tmp_dir) for the temp file location
+	#   Provide location (:s3) to save to s3 bucket as well
+	def nexmo_get_cr(recording_url,file_name,tmp_dir,location=nil)
+		# tmp_dir = 'public/wav/'
 		claims = {
 		  application_id: APP_ID,
 		  private_key: APP_KEY,
@@ -155,7 +158,7 @@ class NexmoBasicController
 				}
 			)
 			$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | AWS_S3 : #{s3_object}"
-			File.delete(file_loc)
+			# File.delete(file_loc)
 		end
 		
 		return download_file_response_code,s3_object

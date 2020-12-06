@@ -20,11 +20,15 @@ class NexmoIVRRoutes < Sinatra::Base
 
 	post '/event_nexmo_ivr' do 
 		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"		
-
 		request_payload = JSON.parse(request.body.read, symbolize_names: true)
+		
+		conversation_uuid = request_payload[:conversation_uuid]
+
 		$app_logger.info "#{__method__} | EVENT : #{request_payload}"
 
 		call_info = NEXMO_DYNAMO_HELPERS.update_dynamo_event(request_payload)
+		$ivr.post_call_cleanup(conversation_uuid) if request_payload[:status] == 'completed'
+
 
 		return 200
 	end	
@@ -57,10 +61,30 @@ class NexmoIVRRoutes < Sinatra::Base
 		$app_logger.info "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | AWS_DB | Filename : #{file_name}"
 
 		$app_logger.debug("#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | Get File : #{request_payload[:recording_url]}")			
-		cr_download_result,s3_object = NEXMO_CONTROLLER.nexmo_get_cr(request_payload[:recording_url],file_name,:s3)
+		cr_download_result,s3_object = NEXMO_CONTROLLER.nexmo_get_cr(request_payload[:recording_url],file_name,NEXMO_TMP_DIR,:s3)
 		$app_logger.debug("#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | CR_DOWNLOAD | Download Recording Result: #{cr_download_result}")
 			
-
 		return 200
 	end		
+
+	post '/event_nexmo_ivr/recording/validation' do 
+		$app_logger.info "#{$ivr.html_logging_prefix(__method__,request,"ACCESS")} Params : #{params}"		
+
+		request_payload = JSON.parse(request.body.read, symbolize_names: true)
+		$app_logger.info "#{__method__} | EVENT : #{request_payload}"
+
+		ncco = ""
+		if request_payload.has_key?(:dtmf)
+			ncco = $ivr.validate_recording(request_payload)
+		end
+
+		content_type :json		
+		return ncco
+	end
+
+	get '/stream/cr/:wav_file' do |wav_file|
+		$app_logger.debug "#{__FILE__.split('/')[-1]}.#{__method__}:#{__LINE__} | STREAM | File to stream: #{File.join("#{$public_dir}",'wav',wav_file)}"
+		send_file File.join($public_dir,'wav',wav_file)
+	end
+
 end	

@@ -1,40 +1,45 @@
 <div class="Vlt-col Vlt-col--2of3">
   <h3><%=@stores_action%> <%=@stores_count%> Stores</h3>
-  <div class="Vlt-card Vlt-bg-white">
-  	<div class="Vlt-card__content">
-      <form method="GET" action="/stores">
-        <div class="Vlt-grid Vlt-grid--narrow">
-          <div class="Vlt-col--A">
-            <div class="Vlt-form__element">
-              <label class="Vlt-label" for="c_search">Search Column</label>
-              <div class="Vlt-select">
-                <select id="c_search" name="search">
-                  <option selected disabled>Choose Column</option>
-                  <% @stores_names.each do |k| %>
-                  <option value="<%=k%>"><%=k%></option>
-                  <% end %>
-                </select>
+  <div class="Vlt-accordion">
+    <button class="Vlt-accordion__trigger">Search Stores</button>
+    <div class="Vlt-accordion__content">
+      <div class="Vlt-card Vlt-bg-white">
+      	<div class="Vlt-card__content">
+          <form method="GET" action="/stores">
+            <div class="Vlt-grid Vlt-grid--narrow">
+              <div class="Vlt-col--A">
+                <div class="Vlt-form__element">
+                  <label class="Vlt-label" for="c_search">Search Column</label>
+                  <div class="Vlt-select">
+                    <select id="c_search" name="search">
+                      <option selected disabled>Choose Column</option>
+                      <% @stores_names.each do |k| %>
+                      <option value="<%=k%>"><%=k%></option>
+                      <% end %>
+                    </select>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <div class="Vlt-col--A">
-            <div class="Vlt-form__element">
-              <label class="Vlt-label">Contains:</label>
-              <div class="Vlt-input">
-                <input type="text" name=value>
+              <div class="Vlt-col--A">
+                <div class="Vlt-form__element">
+                  <label class="Vlt-label">Contains:</label>
+                  <div class="Vlt-input">
+                    <input type="text" name=value>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <div class="VLT-col--A">
-            <div class="Vlt-form__element"> 
-              <label class="Vlt-label"></label>
-              <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" type="Submit">Search</button>
-            </div>
-          </div>
-        </div>              
-      </form>
+              <div class="VLT-col--A">
+                <div class="Vlt-form__element"> 
+                  <label class="Vlt-label"></label>
+                  <button class="Vlt-btn Vlt-btn--primary Vlt-btn_active" type="Submit">Search</button>
+                </div>
+              </div>
+            </div>              
+          </form>
+        </div>
+      </div> 
     </div>
-  </div> 
+  </div>
   <div class="Vlt-card Vlt-bg-white">
     <div class="Vlt-card__content">                  
       <div class="Vlt-grid__separator"><!--notes--></div>

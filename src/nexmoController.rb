@@ -2,7 +2,7 @@
 KEY = ENV['NEXMO_API_KEY']
 SEC = ENV['NEXMO_API_SECRET']
 APP_KEY = ENV['NEXMO_APPLICATION_PRIVATE_KEY_PATH']
-WEB_SERVER = ENV['LB_WEB_SERVER2'] || JSON.parse(Net::HTTP.get(URI('http://127.0.0.1:4040/api/tunnels')))['tunnels'][0]['public_url']
+WEB_SERVER = ENV['LB_WEB_SERVER4'] || JSON.parse(Net::HTTP.get(URI('http://127.0.0.1:4040/api/tunnels')))['tunnels'][0]['public_url']
 # WEB_SERVER = ENV['AWS_WEB_SERVER']
 # NEXMO_STREAM_URL = "#{WEB_SERVER}/stream/poly/"
 NEXMO_STREAM_URL = "#{WEB_SERVER}/stream/cr/"
